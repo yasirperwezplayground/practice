@@ -34,8 +34,8 @@ import Combine
 
 /*
  {
-   "id": 2146538,
-   "message": "SUCCESS"
+ "id": 2146538,
+ "message": "SUCCESS"
  }
  */
 
@@ -58,35 +58,41 @@ struct CatDetailsEnvironment {
 
 let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppEnvironment> {
   state, action, environment in
+//  print("RDDDD catDetailsViewReducer \(action)")
   switch action {
   case .favoriteToggleTapped(let isFav, let cat):
     
     if isFav {
       // FIXME: USE FIRE AND FORGET ACTION
       guard let catId = cat.id else { return .none }
-      return environment.removeFromFav(catId)
+      return environment.removeFromFav(String(catId))
         .receive(on: environment.mainQueue)
         .catchToEffect { _ in
-           CatDetailsViewAction.favRemoved(cat)
+          CatDetailsViewAction.favRemoved(cat)
         }
-
+      
     } else {
       guard let catId = cat.image?.id else { return .none }
       
-//      return environment.addToFav(catId)
-//        .receive(on: environment.mainQueue)
-//        .map { $0.id } // Publisher<String, CatApiError>
-//        .catchToEffect { result -> CatDetailsViewAction in // (Result<String, CatApiError>) -> T
+      
+      /// to transform a  like Publisher<String, CatApiError> to Effect<String, Never>
+      /// I used catchToEffect( with a closure to tranform both of result cases to CatDetailsViewAction
+      /// need to watchout for a simple way to tranforms them
+      ///
+      return environment.addToFav(catId)
+        .receive(on: environment.mainQueue)
+        .map { $0.id } // Publisher<String, CatApiError>
+        .catchToEffect { result -> CatDetailsViewAction in // (Result<String, CatApiError>) -> T
 //          print( "Result:===> \(result)" )
-//          switch result {
-//          case .success(let id):
-//            var favCat = cat
-//            favCat.id = "\(id ?? 0)"
-//            return .favAdded(favCat)
-//          case.failure:
-//            return .none
-//          }
-//        } // Effect<CatDetailsViewAction, Never>
+          switch result {
+          case .success(let id):
+            var favCat = cat
+            favCat.id = id
+            return .favAdded(favCat)
+          case.failure:
+            return .none
+          }
+        } // Effect<CatDetailsViewAction, Never>
     }
   case .favAdded(let cat):
     state.insert(cat)
@@ -97,7 +103,8 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
   case .none:
     return .none
   }
-}.debug()
+}
+  .debug()
 
 
 struct CatDetailsView: View {
@@ -106,31 +113,31 @@ struct CatDetailsView: View {
   
   var body: some View {
     WithViewStore(self.store) { viewStore in
-      NavigationView {
-        VStack {
-          AsyncImage(
-            url: URL(
-              string: self.cat.image?.url ?? ""
-            ),
-            content: { image in
-              image.resizable()
-                .aspectRatio(contentMode: .fit)
-              
-            },
-            placeholder: { ProgressView() }
-          )
-          Button(
-            action: {
-              viewStore.send(.favoriteToggleTapped(cat.id != nil, cat))
-            } ,
-            label: {
-              Image(systemName: "heart.circle")
-                .foregroundColor(
-                  cat.id != nil ? .red : .gray
-                )
-            }
-          )
-        }
+      let favCat = viewStore.state.findFirst(cat.image?.id) ?? self.cat
+      VStack {
+        AsyncImage(
+          url: URL(
+            string: favCat.image?.url ?? ""
+          ),
+          content: { image in
+            image.resizable()
+              .aspectRatio(contentMode: .fit)
+            
+          },
+          placeholder: { ProgressView() }
+        )
+        Button(
+          action: {
+            viewStore.send(.favoriteToggleTapped(viewStore.state.findFirst(cat.image?.id) != nil, favCat))
+          } ,
+          label: {
+            Image(systemName: "heart.circle")
+              .foregroundColor(
+                viewStore.state.findFirst(cat.image?.id) != nil ? .red : .gray
+              )
+          }
+        )
+        
       }
     }
   }

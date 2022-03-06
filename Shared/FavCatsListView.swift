@@ -13,7 +13,7 @@ import Combine
 
 //FIXME: make it conform to codeable so that it can be seriealised to disk
 struct FavoriteCat: Decodable, Equatable, Identifiable, Hashable {
-  var id: String?
+  var id: Int?
   let image: Cat?
   
   func hash(into hasher: inout Hasher) {
@@ -30,14 +30,17 @@ extension Set where Element == FavoriteCat {
 
 extension FavoriteCat {
   init(from cat: Cat, id: String? = nil) {
-    self.init(id: id, image: cat)
+    self.init(id: id.flatMap{ Int($0) }, image: cat)
   }
 }
 
 enum CatFavoriteViewAction: Equatable {
   case fetchFavoriteCats
   case fetchFavoriteCatsResponse(Result<[FavoriteCat], CatApiError>)
-  case removeFromFavorite(String)
+  case removeFromFavorite(FavoriteCat)
+  case favCatRemoved(FavoriteCat)
+  case catDetailsViewAction(CatDetailsViewAction)
+  case none
 }
 
 struct CatFavoriteViewState: Equatable {
@@ -51,53 +54,119 @@ struct CatFavoriteViewState: Equatable {
   var favoriteCats: Set<FavoriteCat>
 }
 
+/*
+ let catsListViewReducer =
+ Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
+   state, action, environment in
+   print("RDDDD catsListViewReducer \(action)")
+   switch action {
+   case .fetchCats:
+     return environment.getCats(state.currentPage)
+       .receive(on: environment.mainQueue)
+       .catchToEffect(CatsListViewAction.fetchedCats)
+     
+   case .fetchedCats(.success(let cats)):
+     state.cats.append(contentsOf: cats)
+     print("Error in \(state.cats.count)")
+     return .none
+   case .fetchedCats(.failure):
+     print("Error in fetching")
+     return .none
+   case .catDetailsViewAction:
+     return .none
+   }
+ }
+ */
+
 let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, AppEnvironment> {
   state, action, environment in
-  switch(action){
+//  print("RDDDD favoriteViewreducer \(action)")
+  
+  switch action {
   case .fetchFavoriteCats:
     return  environment.getFavCats()
       .receive(on: environment.mainQueue)
       .catchToEffect(CatFavoriteViewAction.fetchFavoriteCatsResponse)
+    
   case .fetchFavoriteCatsResponse(.success(let cats)):
+    print("\(cats)")
     state.favoriteCats = Set(cats)
     return .none
+    
   case .fetchFavoriteCatsResponse(.failure(let error)):
+    print("\(error)")
     return .none
-  case .removeFromFavorite(let catId):
+    
+  case .removeFromFavorite(let favCat):
+    guard let id = favCat.id else  { return .none }
+    return environment.removeFromFav(String(id))
+      .receive(on: environment.mainQueue)
+      .catchToEffect{ result -> CatFavoriteViewAction in
+        switch result {
+        case .success(let repsonse):
+          print("\(repsonse.message)")
+          
+          return .favCatRemoved(favCat)
+        case .failure(let error):
+          return .none
+        }
+      }
+    
+  case .favCatRemoved(let favCat):
+    state.favoriteCats.remove(favCat)
+    return .none
+    
+  case .catDetailsViewAction:
+    return Effect.none
+  case .none:
     return .none
   }
-  
 }
 
 
 struct FavCatView: View {
   let cat: FavoriteCat
-  let removeAction: (String) -> Void
+  let removeAction: (FavoriteCat) -> Void
   
   var body: some View {
     VStack {
       cat.image.map(CatView.init)
       Button("Remove from Fav",
              action: {
-        cat.id.map(removeAction)
+        removeAction(cat)
       })
     }
   }
 }
 
-struct CatFavoriteView: View {
+struct FavCatListView: View {
   let store: Store<CatFavoriteViewState, CatFavoriteViewAction>
   var body: some View {
-    NavigationView {
+    
       ScrollView {
         WithViewStore(self.store) { viewStore in
           let cats = Array<FavoriteCat>(viewStore.favoriteCats)
+          let _ = print("FavCatListView \(cats)")
           LazyVStack {
             ForEach(cats) { cat in
-              FavCatView(
-                cat: cat) { id in
-                  viewStore.send(.removeFromFavorite(id))
+              NavigationLink(
+                destination: {
+                  CatDetailsView(
+                    cat: viewStore.favoriteCats.findFirst(cat.image?.id)
+                    ?? FavoriteCat(from: cat.image!),
+                    store: self.store.scope(
+                      state: { $0.favoriteCats },
+                      action: CatFavoriteViewAction.catDetailsViewAction
+                    )
+                  )
+                },
+                label: {
+                  FavCatView(
+                    cat: cat) { favCat in
+                      viewStore.send(.removeFromFavorite(favCat))
+                    }
                 }
+              )
             }
           }
           .task {
@@ -105,6 +174,5 @@ struct CatFavoriteView: View {
           }
         }
       }
-    }
   }
 }

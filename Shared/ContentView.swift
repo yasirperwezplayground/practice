@@ -4,20 +4,29 @@ import SwiftUI
 import UIKit
 import Combine
 
-
 /// save favorite cats locally as well
 /// Cats api key
 /// dc34ebc3-5565-417d-9685-a2b285896efc
 /// https://api.thecatapi.com/v1/images/search
 
 
-struct CatApiError: Error, Equatable {}
+enum CatApiError: Error, Equatable {
+  case noInternet
+  case failedWithErrorCode(Int)
+  case faildWithMessage(String)
+  case unknown
+}
+
+enum ParseError: Error, Equatable {
+  case failedToParse(String)
+  case unknown
+}
 
 struct AppState: Equatable {
   var cats: [Cat]
-  var currentPage: Int
-  
   var favoriteCats: Set<FavoriteCat>
+  
+  var currentPage: Int
   
   public init() {
     self.cats = []
@@ -29,6 +38,7 @@ struct AppState: Equatable {
 enum AppAction: Equatable {
   case catsListActions(CatsListViewAction)
   case favoriteAction(CatFavoriteViewAction)
+  case catDetailsViewAction(CatDetailsViewAction)
 }
 
 struct AppEnvironment {
@@ -43,33 +53,78 @@ extension AppState {
   static var initial = AppState()
 }
 extension AppEnvironment {
-  static let live = AppEnvironment(
-    getCats: getCats(page:),
-    getFavCats: getFavCatsAPI,
-    addToFav: addFavCatsAPI(id:),
-    removeFromFav: deleteFavCatsAPI(id:),
-    mainQueue: DispatchQueue.main
-  )
+  static func live(
+    webService: Webservice
+  ) -> AppEnvironment {
+    return AppEnvironment(
+      getCats: { page in
+        webService.fetch(
+          request: RequestBuilder.getCatsRequest(page: page)
+        ).eraseToEffect()
+      },
+      getFavCats: {
+        webService.fetch(
+          request: RequestBuilder.getFavCatRequest()
+        ).eraseToEffect()
+      },
+      addToFav: { id in
+        webService.fetch(request: RequestBuilder.addToFavRequest(id: id))
+          .eraseToEffect()
+      },
+      removeFromFav: { id in
+        webService.fetch(request: RequestBuilder.deleteFavCatRequest(id: id))
+          .eraseToEffect()
+      },
+      mainQueue: DispatchQueue.main
+    )
+    
+  }
 }
 
+/// Custom case path . But this approach does  not looks good.
+/// We should try to arrage the state in a other way.
+///  the problem here was that catDetailsViewAction is a case of both enum.
+///  It is a cse of shared action same enum is nested in two different hirarcy
+///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
+///
+let datailsCatPath =  CasePath.init(
+  embed: { catDetailsAction  in
+    
+    AppAction.favoriteAction(.catDetailsViewAction(catDetailsAction))
+  },
+  extract: { appAction in
+    switch appAction {
+    case .catsListActions(.catDetailsViewAction(let local)):
+      return local
+    case .favoriteAction(.catDetailsViewAction(let local)):
+      return local
+    default: return nil
+    }
+  })
+
+
 let appReducer = Reducer.combine(
-  catsListViewReducer.pullback(
-    state: \AppState.catsListViewState,
-    action: /AppAction.catsListActions,
-    environment: { $0 }
-  ),
-  favoriteViewreducer.pullback(
-    state: \AppState.catFavoriteViewState,
-    action: /AppAction.favoriteAction,
-    environment: { $0 }),
   
-  catDetailsViewReducer.pullback(
-    state: \AppState.favoriteCats,
-    action: /AppAction.catsListActions .. CatsListViewAction.catDetailsViewAction,
-    environment: { $0 })
-)
-//
-//AppAction.catsListActions.CatsListActions.catDetailsViewAction,
+  catDetailsViewReducer
+    .pullback(
+      state: \AppState.favoriteCats,
+      action:  datailsCatPath,
+      environment: { $0 }
+    ),
+  catsListViewReducer
+    .pullback(
+      state: \AppState.catsListViewState,
+      action: /AppAction.catsListActions,
+      environment: { $0 }
+    ),
+  favoriteViewreducer
+    .pullback(
+      state: \AppState.catFavoriteViewState,
+      action: /AppAction.favoriteAction,
+      environment: { $0 }
+    )
+)//.debug()
+
 
 extension AppState {
   var catsListViewState: CatsListViewState {
@@ -97,6 +152,7 @@ extension AppState {
   }
 }
 
+//MARK: - MainView
 struct MainView: View {
   let store: Store<AppState, AppAction>
   var body: some View {
@@ -115,7 +171,7 @@ struct MainView: View {
         )
         NavigationLink(
           destination: {
-            CatFavoriteView(
+            FavCatListView(
               store: self.store.scope(
                 state: { $0.catFavoriteViewState },
                 action: AppAction.favoriteAction
@@ -131,155 +187,231 @@ struct MainView: View {
 }
 
 
-
-
-
-
-
-
 //===============   Side Effect Starts   =======================/
 
 ///https://api.thecatapi.com/v1/images/search
 
-func getCatsRequest(page: Int) -> URLRequest? {
-  var components = URLComponents()
-  components.scheme = "https"
-  components.host = "api.thecatapi.com"
-  components.path = "/v1/images/search"
-  
-  components.queryItems = [
-    URLQueryItem(name: "page", value: "\(page)"),
-    URLQueryItem(name: "limit", value: "\(100)")
-  ]
-  
-  guard let url = components.url else { return nil }
-  var request = URLRequest(url: url)
-  request.allHTTPHeaderFields = [
-    "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc"
-  ]
-  return request
+enum RequestType {
+  case authenticated
+  case open
 }
 
-func addToFavRequest(id: String) -> URLRequest? {
-  var components = URLComponents()
-  components.scheme = "https"
-  components.host = "api.thecatapi.com"
-  components.path = "/v1/favourites"
+
+class RequestBuilder {
+  static let baseUrl = URL(string: "https://api.thecatapi.com")
+  
+  static func getFavCatRequest() -> Request<[FavoriteCat]> {
+    Request<[FavoriteCat]>.init(
+      path: "/v1/favourites",
+      queryItems: [
+        URLQueryItem(name: "limit", value: "\(100)")
+      ],
+      method: .get,
+      isAuthenticated: false
+    )
+  }
+  
+  static func getFavCatRequest(id: String) -> Request<[FavoriteCat]> {
+    Request<[FavoriteCat]>.init(
+      path: "/v1/favourites",
+      queryItems: [
+        URLQueryItem(name: "limit", value: "\(100)")
+      ],
+      method: .get,
+      isAuthenticated: false
+    )
+  }
+  
+  
+  static func addToFavRequest(id: String) -> Request<FavEditResponse> {
+    Request<FavEditResponse>.init(
+      path: "/v1/favourites",
+      queryItems: [],
+      method: .post,
+      isAuthenticated: false,
+      postData: ["image_id": id]
+    )
+  }
+  
+  
+  static func getCatsRequest(page: Int) -> Request<[Cat]> {
+    Request<[Cat]>.init(
+      path:"/v1/images/search",
+      queryItems: [
+        URLQueryItem(name: "page", value: "\(page)"),
+        URLQueryItem(name: "limit", value: "\(100)")
+      ],
+      method: .get,
+      isAuthenticated: false
+    )
     
-  guard let url = components.url else { return nil }
-  var request = URLRequest(url: url)
-  request.allHTTPHeaderFields = [
-    "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc",
-    "Content-Type": "application/json"
-  ]
-  request.httpMethod = "POST"
-  let body: [String: Any] = [
-    "image_id": id
-  ]
+  }
   
-  request.httpBody = try? JSONSerialization.data(
-    withJSONObject: body,
-    options: [])
+  static func deleteFavCatRequest(id: String) -> Request<FavEditResponse> {
+    Request<FavEditResponse>.init(
+      path: "/v1/favourites/\(id)",
+      queryItems: [],
+      method: .delete,
+      isAuthenticated: true
+    )
+  }
   
-  return request
-}
-
-func deleteFavRequest(id: String) -> URLRequest? {
-  var components = URLComponents()
-  components.scheme = "https"
-  components.host = "api.thecatapi.com"
-  components.path = "/v1/favourites/\(id)"
+  
+  func urlRequest(path: String,
+                  queryItems: [URLQueryItem],
+                  method: HTTPMethod,
+                  isAuthenticated: Bool,
+                  postData: [String: Any]?
+  ) -> URLRequest? {
     
-  guard let url = components.url else { return nil }
-  var request = URLRequest(url: url)
-  request.allHTTPHeaderFields = [
-    "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc",
-    "Content-Type": "application/json"
-  ]
-  request.httpMethod = "DELETE"
-  return request
-}
-
-func getFavCatsRequest() -> URLRequest? {
-  var components = URLComponents()
-  components.scheme = "https"
-  components.host = "api.thecatapi.com"
-  components.path = "/v1/favourites"
-  
-  components.queryItems = [
-    URLQueryItem(name: "limit", value: "\(100)")
-  ]
-  
-  guard let url = components.url else { return nil }
-  var request = URLRequest(url: url)
-  request.allHTTPHeaderFields = [
-    "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc"
-  ]
-  return request
-}
-
-func getCatDetailsRequest() -> URLRequest? {
-  var components = URLComponents()
-  components.scheme = "https"
-  components.host = "api.thecatapi.com"
-  components.path = "/v1/favourites"
-  
-  components.queryItems = [
-    URLQueryItem(name: "limit", value: "\(100)")
-  ]
-  
-  guard let url = components.url else { return nil }
-  var request = URLRequest(url: url)
-  request.allHTTPHeaderFields = [
-    "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc"
-  ]
-  return request
-}
-
-
-func getFavCatsAPI() -> Effect<[FavoriteCat], CatApiError> {
-  let request = getFavCatsRequest()
-  return URLSession.shared.dataTaskPublisher(for: request!)
-    .map { $0.data }
-    .decode(type: [FavoriteCat].self, decoder: JSONDecoder())
-    .eraseToAnyPublisher()
-    .mapError { _ in CatApiError() }
-    .eraseToEffect()
-}
-
-func addFavCatsAPI(id: String) -> Effect<FavEditResponse, Never> {
-  let request = addToFavRequest(id: id)
-  return URLSession.shared.dataTaskPublisher(for: request!)
-    .map {
-      print("\(String(data: $0.data ?? Data(), encoding: .utf8))")
-      print("\($0.response)")
-      return $0.data
+    var components = URLComponents.init(url: RequestBuilder.baseUrl!, resolvingAgainstBaseURL: false)
+    components?.path = path
+    components?.queryItems = queryItems
+    
+    guard let url = components?.url else { return nil }
+    
+    var request = URLRequest(url: url)
+    request.httpMethod = method.rawValue
+    request.allHTTPHeaderFields = [
+      "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc",
+      "Content-Type": "application/json"
+    ]
+    if let postData = postData {
+      request.httpBody = try? JSONSerialization.data(
+        withJSONObject: postData,
+        options: [])
     }
-    .decode(type: FavEditResponse.self, decoder: JSONDecoder())
-    .mapError { _ in return Never.self }
-    .eraseToEffect()
+    return request
+  }
 }
 
-func deleteFavCatsAPI(id: String) -> Effect<FavEditResponse, CatApiError> {
-  let request = deleteFavRequest(id: id)
-  return URLSession.shared.dataTaskPublisher(for: request!)
-    .map { $0.data }
-    .decode(type: FavEditResponse.self, decoder: JSONDecoder())
-    .eraseToAnyPublisher()
-    .mapError { _ in CatApiError() }
-    .eraseToEffect()
+enum HTTPMethod: String {
+  case get = "GET"
+  case post = "POST"
+  case put = "PUT"
+  case patch = "PATCH"
+  case delete = "DELETE"
+}
+
+struct Request<T: Decodable> {
+  public typealias Model = T
+  
+  public init(
+    path: String,
+    queryItems: [URLQueryItem],
+    method: HTTPMethod = .get,
+    isAuthenticated: Bool = false,
+    postData: [String: Any]? = nil
+  ) {
+    self.path = path
+    self.queryItems = queryItems
+    self.method = method
+    self.isAuthenticated = isAuthenticated
+    self.postData = postData
+  }
+  
+  let path: String
+  let queryItems: [URLQueryItem]
+  let method: HTTPMethod
+  let isAuthenticated: Bool
+  let postData: [String: Any]?
 }
 
 
-func getCats(page: Int) -> Effect<[Cat], CatApiError> {
-  let request = getCatsRequest(page: page)
-  return URLSession.shared.dataTaskPublisher(for: request!)
-    .map { $0.data }
-    .decode(type: [Cat].self, decoder: JSONDecoder())
-    .eraseToAnyPublisher()
-    .mapError { _ in CatApiError() }
-    .eraseToEffect()
+typealias Networking = (URLRequest) ->
+AnyPublisher<(data: Data, response: URLResponse), Error>
+typealias Parse<Model> = (Data) -> AnyPublisher<Model, Error>
+typealias RequestToUrlReqeust = (String, [URLQueryItem], HTTPMethod, Bool, [String: Any]?) -> URLRequest?
+
+extension URLSession {
+  func erasedDataTaskPublisher(
+    for request: URLRequest
+  ) -> AnyPublisher<(data: Data, response: URLResponse), Error> {
+    dataTaskPublisher(for: request)
+      .mapError { $0 }
+      .eraseToAnyPublisher()
+  }
+}
+
+class Webservice {
+  let networking: Networking
+  var requestBuilder: RequestToUrlReqeust?
+  
+  public init(
+    networking: @escaping Networking
+  ) {
+    self.networking = networking
+  }
+  public func fetch<Model: Decodable>(
+    request: Request<Model>
+  ) -> AnyPublisher<Model, CatApiError> {
+    // Convert the Request<Model> into URL request
+    guard let requestBuilder = self.requestBuilder,
+          let request = requestBuilder(
+            request.path,
+            request.queryItems,
+            request.method,
+            request.isAuthenticated,
+            request.postData
+          ) else {
+            return Result.Publisher(
+              CatApiError.unknown
+            ).eraseToAnyPublisher()
+          }
+    
+    // Get response from server
+    return networking(request)
+      .map{ $0.data }
+      .decode()
+      .mapError{ _ in CatApiError.unknown }
+      .eraseToAnyPublisher()
+  }
+}
+
+extension Publisher where Output == Data {
+  func decode<T: Decodable>(
+    as type: T.Type = T.self,
+    using decoder: JSONDecoder = .holiduDecoder
+  ) -> Publishers.Decode<Self, T, JSONDecoder> {
+    // we can handle error here if we want
+    decode(type: type, decoder: decoder)
+  }
 }
 
 
-//===============   Side Effect Starts   =======================/
+extension JSONDecoder {
+  static let holiduDecoder: JSONDecoder = {
+    JSONDecoder()
+  }()
+}
+
+extension RequestBuilder {
+  func urlRequest<Model>(for request: Request<Model>) -> URLRequest? {
+    
+    var components = URLComponents.init(url: RequestBuilder.baseUrl!, resolvingAgainstBaseURL: false)
+    components?.path = request.path
+    components?.queryItems = request.queryItems
+    
+    guard let url = components?.url else { return nil }
+    
+    var request = URLRequest(url: url)
+    request.allHTTPHeaderFields = [
+      "x-api-key": "dc34ebc3-5565-417d-9685-a2b285896efc"
+    ]
+    return request
+  }
+}
+
+
+
+//struct Response<T: Decodable> {
+//  public typealias Model = T
+//
+//  let request: Request<Model>
+//  let data: Data?
+//  let urlResponse: URLResponse?
+//  let error: CatApiError?
+//}
+
+
+

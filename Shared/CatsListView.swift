@@ -36,6 +36,7 @@ enum CatsListViewAction: Equatable {
 let catsListViewReducer =
 Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
   state, action, environment in
+//  print("RDDDD catsListViewReducer \(action)")
   switch action {
   case .fetchCats:
     return environment.getCats(state.currentPage)
@@ -52,7 +53,7 @@ Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
   case .catDetailsViewAction:
     return .none
   }
-}.debug()
+}
 ///A cell in CatsListView
 struct CatView: View {
   var cat: Cat
@@ -91,13 +92,14 @@ struct CatsListView: View {
           } else {
             LazyVStack {
               ForEach(viewStore.cats) { cat in
-                NavigationLink.init(
+                NavigationLink(
                   destination: {
-                    CatDetailsView(cat: viewStore.favoriteCats.findFirst(cat.id) ?? FavoriteCat(from: cat),
-                                   store: self.store.scope(
-                                    state: { $0.favoriteCats },
-                                    action: CatsListViewAction.catDetailsViewAction
-                                   )
+                    CatDetailsView(
+                      cat: viewStore.favoriteCats.findFirst(cat.id) ?? FavoriteCat(from: cat),
+                      store: self.store.scope(
+                        state: { $0.favoriteCats },
+                        action: CatsListViewAction.catDetailsViewAction
+                      )
                     )
                   },
                   label: {
