@@ -11,16 +11,13 @@ import ComposableArchitecture
 @main
 struct TCAPracticeApp: App {
   let webservice: Webservice
-  let requestBuilder: RequestBuilder
   
   init() {
-    self.requestBuilder = RequestBuilder()
     self.webservice = Webservice(
       networking: URLSession.shared.erasedDataTaskPublisher(for:)
     )
-    self.webservice.requestBuilder = self.requestBuilder.urlRequest(path:queryItems:method:isAuthenticated:postData:)
+    self.webservice.requestBuilder = RequestBuilder().urlRequest(requestData:)
   }
-  
   
   var body: some Scene {
     WindowGroup {
