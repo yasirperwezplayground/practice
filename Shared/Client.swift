@@ -71,7 +71,7 @@ struct Request<T: Decodable> {
 /// Shape of the function which takes URLRequest and returns a publisher
 typealias Networking = (URLRequest) ->
 AnyPublisher<(data: Data, response: URLResponse), Error>
-
+/// Shape of the function which takes RequestData and returns a publisher
 typealias RequestToUrlReqeust = (RequestData) -> URLRequest?
 
 
@@ -80,12 +80,14 @@ typealias RequestToUrlReqeust = (RequestData) -> URLRequest?
 class Webservice {
   ///    Dependencies
   let networking: Networking
-  var requestBuilder: RequestToUrlReqeust?
+  var requestBuilder: RequestToUrlReqeust
   
   public init(
-    networking: @escaping Networking
+    networking: @escaping Networking,
+    requestBuilder: @escaping RequestToUrlReqeust
   ) {
     self.networking = networking
+    self.requestBuilder = requestBuilder
   }
   
   public func fetch<Model: Decodable>(
@@ -93,8 +95,7 @@ class Webservice {
   ) -> AnyPublisher<Model, CatApiError> {
     
     // Convert the Request<Model> into URL request
-    guard let requestBuilder = self.requestBuilder,
-          let request = requestBuilder(request.data) else {
+    guard let request = requestBuilder(request.data) else {
             return Result.Publisher(
               CatApiError.unknown
             ).eraseToAnyPublisher()
@@ -156,6 +157,10 @@ class RequestBuilder {
 
 
 extension URLSession {
+  
+  /// <#Description#>
+  /// - Parameter request: <#request description#>
+  /// - Returns: <#description#>
   func erasedDataTaskPublisher(
     for request: URLRequest
   ) -> AnyPublisher<(data: Data, response: URLResponse), Error> {
@@ -163,6 +168,13 @@ extension URLSession {
       .mapError { $0 }
       .eraseToAnyPublisher()
   }
+  
+  // Networking with Log
+  // this function should do all the logging and monitering job
+  // This function should send the log to monitoring server when we have an unexpected response
+  // from BE, or in case of timeout etc.
+  // SHOULD IT USE A SEPARATE URLSESSION. IMO IT SHOULD BECUASE IT WILL CONSISTANTLY HIT A SEPARATE ENDPOINT
+//  /func erasedDataTaskPublisher()
 }
 
 
