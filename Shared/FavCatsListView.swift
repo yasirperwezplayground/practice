@@ -104,7 +104,7 @@ let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, A
       .catchToEffect{ result -> CatFavoriteViewAction in
         switch result {
         case .success(let repsonse):
-          print("\(repsonse.message)")
+          print("\(repsonse.message ?? "")")
           
           return .favCatRemoved(favCat)
         case .failure(let error):

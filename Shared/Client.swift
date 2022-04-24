@@ -8,12 +8,17 @@
 import Foundation
 import Combine
 
-//TODO: flexiblity in changing the Url session, adding special hearder to request, hooking for networking and parsing logs
-
+//TODO:
+/*
+- flexiblity in changing the Url session
+- adding special hearder to request
+- hooking for networking and parsing logs
+*/
 public enum CatApiError: Error, Equatable {
   case noInternet
   case failedWithErrorCode(Int)
   case faildWithMessage(String)
+  case decodingError
   case unknown
 }
 
@@ -55,7 +60,7 @@ struct RequestData {
   let postData: [String: Any]?
 }
 
-/// Makes the request generic. We need to store the type of about the response DTO
+/// Makes the request generic. We need to store the type of requested Domain Model to parse the response DTO in the required domain model.
 struct Request<T: Decodable> {
   public typealias Model = T
   
@@ -71,12 +76,20 @@ struct Request<T: Decodable> {
 /// Shape of the function which takes URLRequest and returns a publisher
 typealias Networking = (URLRequest) ->
 AnyPublisher<(data: Data, response: URLResponse), Error>
-/// Shape of the function which takes RequestData and returns a publisher
+
+/// Shape of the function which takes RequestData and transforms it to URLRequest
 typealias RequestToUrlReqeust = (RequestData) -> URLRequest?
 
-
-///  Request => RequestModel
-///  Jobs. Request => URLRequest => Request.Model
+/// Main Tasks
+/// * Request => Request.Model
+/// * Request => URLRequest => Request.Model
+///
+//TODO:
+/*
+ - All networking related error should be logged and monitored in Networking function
+ - All decodeing related error should be logged and monitored in decode() function
+ - Header enrichment should happen in the RequestToUrlReqeust func i.e it should be part of request builder. There should be a separate func which adds the required header based on the type of request [open|authenticaste]. Do we also need to have separate func to add header for other endpoints like log/analytics?
+ */
 class Webservice {
   ///    Dependencies
   let networking: Networking
@@ -95,11 +108,13 @@ class Webservice {
   ) -> AnyPublisher<Model, CatApiError> {
     
     // Convert the Request<Model> into URL request
-    guard let request = requestBuilder(request.data) else {
-            return Result.Publisher(
-              CatApiError.unknown
-            ).eraseToAnyPublisher()
-          }
+    guard let request = requestBuilder(
+      request.data
+    ) else {
+      return Result.Publisher(
+        CatApiError.unknown
+      ).eraseToAnyPublisher()
+    }
     
     // Get response from server
     return networking(request)
@@ -126,7 +141,10 @@ extension JSONDecoder {
     JSONDecoder()
   }()
 }
-
+//TODO:
+/*
+ 
+ */
 
 class RequestBuilder {
   static let baseUrl = URL(string: "https://api.thecatapi.com")

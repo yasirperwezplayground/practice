@@ -18,20 +18,24 @@ extension Publisher where Output == Data, Failure == URLError {
       .mapError { _ in CatApiError.noInternet }
       .flatMap { data -> AnyPublisher<A, CatApiError> in
         do {
-          return try Just(JSONDecoder.holiduDecoder.decode(A.self, from: data))
-            .setFailureType(to: CatApiError.self)
-            .eraseToAnyPublisher()
-        } catch let decodingError {
-          do {
-            return Fail(error: CatApiError.noInternet).eraseToAnyPublisher()
-          } catch {
-            return Fail(error: CatApiError.noInternet).eraseToAnyPublisher()
-          }
+          return try Just(
+            JSONDecoder.holiduDecoder.decode(
+              A.self,
+              from: data
+            )
+          )
+          .setFailureType(
+            to: CatApiError.self
+          )
+          .eraseToAnyPublisher()
+        } catch {          
+          return Fail(error: CatApiError.decodingError).eraseToAnyPublisher()
         }
       }
       .eraseToEffect()
   }
 }
+
 //public struct CatApiError: Codable, Error, Equatable, LocalizedError {
 //  public let errorDump: String
 //  public let file: String

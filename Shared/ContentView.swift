@@ -15,7 +15,6 @@ struct AppState: Equatable {
   var favoriteCats: Set<FavoriteCat>
   
   var currentPage: Int
-  
   public init() {
     self.cats = []
     self.currentPage = 0
@@ -40,6 +39,7 @@ struct AppEnvironment {
 extension AppState {
   static var initial = AppState()
 }
+
 extension AppEnvironment {
   static func live(
     webService: Webservice
@@ -71,8 +71,8 @@ extension AppEnvironment {
 
 /// Custom case path . But this approach does  not looks good.
 /// We should try to arrage the state in a other way.
-///  the problem here was that catDetailsViewAction is a case of both enum.
-///  It is a cse of shared action same enum is nested in two different hirarcy
+///  the problem here was that catDetailsViewAction is a case of both enum CatsListViewAction CatFavoriteViewAction.
+///  It is the case of shared action same enum is nested in two different hirarcy
 ///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
 ///
 let datailsCatPath =  CasePath.init(
