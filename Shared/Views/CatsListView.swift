@@ -32,6 +32,15 @@ enum CatsListViewAction: Equatable {
   case catDetailsViewAction(CatDetailsViewAction)
 }
 
+let catsListViewReducerEnriched = Reducer.combine(
+  catsListViewReducer,
+  catDetailsViewReducer.pullback(
+    state: \CatsListViewState.favoriteCats,
+    action: /CatsListViewAction.catDetailsViewAction,
+    environment: { $0 }
+  )
+)
+
 
 let catsListViewReducer =
 Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {

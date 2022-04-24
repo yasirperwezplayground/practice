@@ -79,6 +79,15 @@ struct CatFavoriteViewState: Equatable {
  }
  */
 
+let favoriteViewreducerEnriched = Reducer.combine (
+  favoriteViewreducer,
+  catDetailsViewReducer.pullback(
+    state: \CatFavoriteViewState.favoriteCats,
+    action: /CatFavoriteViewAction.catDetailsViewAction,
+    environment: { $0 }
+  )
+)
+
 let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, AppEnvironment> {
   state, action, environment in
   

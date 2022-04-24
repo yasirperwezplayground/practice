@@ -99,12 +99,13 @@ extension AppEnvironment {
   }
 }
 
-/// Custom case path . But this approach does  not looks good.
+/// Custom case path. Was used to read and embed values from CatsListViewAction and CatFavoriteViewAction to get catDetailsViewAction
 /// We should try to arrage the state in a other way.
 ///  the problem here was that catDetailsViewAction is a case of both enum CatsListViewAction CatFavoriteViewAction.
 ///  It is the case of shared action same enum is nested in two different hirarcy
 ///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
-///
+/// But this approach does  not looks good. So as jaleel suggest we could also combine the CatsListView reduce and CatsDetailsViewReducer and same with FavCatslistViewReducer.
+/*
 let datailsCatPath =  CasePath.init(
   embed: { catDetailsAction  in
     
@@ -119,51 +120,26 @@ let datailsCatPath =  CasePath.init(
     default: return nil
     }
   })
+ 
+ */
 
 
-//let appReducer = Reducer.combine(
-//
-//  catDetailsViewReducer
-//    .pullback(
-//      state: \AppState.favoriteCats,
-//      action:  datailsCatPath,
-//      environment: { $0 }
-//    ),
-//  catsListViewReducer
-//    .pullback(
-//      state: \AppState.catsListViewState,
-//      action: /AppAction.catsListActions,
-//      environment: { $0 }
-//    ),
-//  favoriteViewreducer
-//    .pullback(
-//      state: \AppState.catFavoriteViewState,
-//      action: /AppAction.favoriteAction,
-//      environment: { $0 }
-//    )
-//)//.debug()
 
 let appReducer = Reducer.combine(
 
-  catDetailsViewReducer
-    .pullback(
-      state: \AppState.favoriteCats,
-      action:  datailsCatPath,
-      environment: { $0 }
-    ),
-  catsListViewReducer
+  catsListViewReducerEnriched
     .pullback(
       state: \AppState.catsListViewState,
       action: /AppAction.catsListActions,
       environment: { $0 }
     ),
-  favoriteViewreducer
+  favoriteViewreducerEnriched
     .pullback(
       state: \AppState.catFavoriteViewState,
       action: /AppAction.favoriteAction,
       environment: { $0 }
     )
-)//.debug()
+)
 
 
 
