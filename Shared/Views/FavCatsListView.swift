@@ -22,17 +22,18 @@ struct FavoriteCat: Decodable, Equatable, Identifiable, Hashable {
   }
 }
 
+extension FavoriteCat {
+  init(from cat: Cat, id: String? = nil) {
+    self.init(id: id.flatMap{ Int($0) }, image: cat)
+  }
+}
+
 extension Set where Element == FavoriteCat {
   func findFirst(_ catId: String?) -> FavoriteCat? {
     return self.first { $0.image?.id == catId }
   }
 }
 
-extension FavoriteCat {
-  init(from cat: Cat, id: String? = nil) {
-    self.init(id: id.flatMap{ Int($0) }, image: cat)
-  }
-}
 
 enum CatFavoriteViewAction: Equatable {
   case fetchFavoriteCats

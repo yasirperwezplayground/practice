@@ -10,47 +10,13 @@ import SwiftUI
 import UIKit
 import Combine
 
-
-
-//struct CatDetails: Decodable {
-//  let id: String?
-//  let url: String?
-//  let subId: String?
-//  let createdId: String?
-//
-//  enum CodingKeys: String, CodingKey {
-//    case subId = "sub_id"
-//    case createdId = "created_id"
-//    case id
-//    case url
-//  }
-//}
-
-//struct CatsDetailsViewState {
-//  var cat: Cat
-//  var isFavorite: Bool
-//}
-
-
-/*
- {
- "id": 2146538,
- "message": "SUCCESS"
- }
- */
-
-//struct CatDatailsViewState {
-//  let catonScreen: FavoriteCat
-//  let favorites: Set<FavoriteCat>
-//}
-
 struct FavEditResponse: Decodable {
   var id: Int?
   var message: String?
 }
 
 enum CatDetailsViewAction: Equatable {
-  case favoriteToggleTapped(Bool, FavoriteCat)
+  case favoriteToggled(Bool, FavoriteCat)
   case favAdded(FavoriteCat)
   case favRemoved(FavoriteCat)
   case none
@@ -62,7 +28,7 @@ struct CatDetailsEnvironment {
 let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppEnvironment> {
   state, action, environment in
   switch action {
-  case .favoriteToggleTapped(let isFav, let cat):
+  case .favoriteToggled(let isFav, let cat):
     
     if isFav {
       guard let catId = cat.id else { return .none }
@@ -75,8 +41,8 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
     } else {
       guard let catId = cat.image?.id else { return .none }
       
-      /// to transform a  like Publisher<String, CatApiError> to Effect<String, Never>
-      /// I used catchToEffect( with a closure to tranform both of result cases to CatDetailsViewAction
+      /// to transform a  Publisher<String, CatApiError> to Effect<String, Never>
+      /// I have used catchToEffect( with a closure to tranform both of result cases to CatDetailsViewAction
       /// need to watchout for a simple way to tranforms them
       ///
       return environment.addToFav(catId)
@@ -112,9 +78,7 @@ struct CatDetailsView: View {
   
   var body: some View {
     WithViewStore(self.store) { viewStore in
-//      let favCat = viewStore.state.findFirst(cat.image?.id) ?? self.cat
-//      let favCat = self.cat
-      VStack {
+      VStack(spacing: 16) {
         AsyncImage(
           url: URL(
             string: self.cat.image?.url ?? ""
@@ -124,10 +88,16 @@ struct CatDetailsView: View {
               .aspectRatio(contentMode: .fit)
           },
           placeholder: { ProgressView() }
-        )
+        ).cornerRadius(16.0)
         Button(
           action: {
-            viewStore.send(.favoriteToggleTapped(viewStore.state.findFirst(self.cat.image?.id) != nil, self.cat))
+            viewStore.send(
+              .favoriteToggled(
+                viewStore.state.findFirst(
+                  self.cat.image?.id) != nil,
+                self.cat
+              )
+            )
           } ,
           label: {
             Image(systemName: "heart.circle")
@@ -136,10 +106,42 @@ struct CatDetailsView: View {
               )
           }
         )
-      }
+      }.padding()
     }
   }
 }
 
 
 
+
+//struct CatDetails: Decodable {
+//  let id: String?
+//  let url: String?
+//  let subId: String?
+//  let createdId: String?
+//
+//  enum CodingKeys: String, CodingKey {
+//    case subId = "sub_id"
+//    case createdId = "created_id"
+//    case id
+//    case url
+//  }
+//}
+
+//struct CatsDetailsViewState {
+//  var cat: Cat
+//  var isFavorite: Bool
+//}
+
+
+/*
+ {
+ "id": 2146538,
+ "message": "SUCCESS"
+ }
+ */
+
+//struct CatDatailsViewState {
+//  let catonScreen: FavoriteCat
+//  let favorites: Set<FavoriteCat>
+//}
