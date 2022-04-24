@@ -21,26 +21,26 @@ extension RequestBuilder {
     )
   }
   
-  static func getFavCatRequest(id: String) -> Request<[FavoriteCat]> {
-    Request<[FavoriteCat]>.init(
-      data: RequestData(
-      path: "/v1/favourites",
-      queryItems: [
-        URLQueryItem(name: "limit", value: "\(100)")
-      ],
-      method: .get
-      )
-    )
-  }
+//  static func getFavCatRequest(id: String) -> Request<[FavoriteCat]> {
+//    Request<[FavoriteCat]>.init(
+//      data: RequestData(
+//        path: "/v1/favourites",
+//        queryItems: [
+//          URLQueryItem(name: "limit", value: "\(100)")
+//        ],
+//        method: .get
+//      )
+//    )
+//  }
   
   
   static func addToFavRequest(id: String) -> Request<FavEditResponse> {
     Request<FavEditResponse>.init(
       data: RequestData(
-      path: "/v1/favourites",
-      queryItems: [],
-      method: .post,
-      postData: ["image_id": id]
+        path: "/v1/favourites",
+        queryItems: [],
+        method: .post,
+        postData: ["image_id": id]
       )
     )
   }
@@ -49,12 +49,12 @@ extension RequestBuilder {
   static func getCatsRequest(page: Int) -> Request<[Cat]> {
     Request<[Cat]>.init(
       data: RequestData(
-      path:"/v1/images/search",
-      queryItems: [
-        URLQueryItem(name: "page", value: "\(page)"),
-        URLQueryItem(name: "limit", value: "\(100)")
-      ],
-      method: .get
+        path:"/v1/images/search",
+        queryItems: [
+          URLQueryItem(name: "page", value: "\(page)"),
+          URLQueryItem(name: "limit", value: "\(100)")
+        ],
+        method: .get
       )
     )
     
@@ -63,13 +63,13 @@ extension RequestBuilder {
   static func deleteFavCatRequest(id: String) -> Request<FavEditResponse> {
     Request<FavEditResponse>.init(
       data: RequestData(
-      path: "/v1/favourites/\(id)",
-      queryItems: [],
-      method: .delete
+        path: "/v1/favourites/\(id)",
+        queryItems: [],
+        method: .delete
       )
     )
   }
-
+  
 }
 
 

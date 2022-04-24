@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		312D53072815933D00F236A3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312D53062815933D00F236A3 /* AppState.swift */; };
+		312D53082815933D00F236A3 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312D53062815933D00F236A3 /* AppState.swift */; };
 		314072AC27B165FA00062C53 /* Tests_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314072AB27B165FA00062C53 /* Tests_iOS.swift */; };
 		314072AE27B165FA00062C53 /* Tests_iOSLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314072AD27B165FA00062C53 /* Tests_iOSLaunchTests.swift */; };
 		314072B827B165FA00062C53 /* Tests_macOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 314072B727B165FA00062C53 /* Tests_macOS.swift */; };
@@ -50,6 +52,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		312D53062815933D00F236A3 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		3140729327B165F900062C53 /* TCAPracticeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCAPracticeApp.swift; sourceTree = "<group>"; };
 		3140729427B165F900062C53 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3140729527B165FA00062C53 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -103,6 +106,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		312D5309281593DE00F236A3 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				314072D527B4454C00062C53 /* CatsListView.swift */,
+				314072D227B4453D00062C53 /* CatDetailsView.swift */,
+				314072D827B4459C00062C53 /* FavCatsListView.swift */,
+				3140729427B165F900062C53 /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		312D530A281593FE00F236A3 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				31788C3127D559E200E76F5D /* Client.swift */,
+				31788C3427D55B4500E76F5D /* Requests.swift */,
+				31C77F7727E0E4EB00C9A0C0 /* Decoder.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
 		3140728D27B165F900062C53 = {
 			isa = PBXGroup;
 			children = (
@@ -117,15 +141,11 @@
 		3140729227B165F900062C53 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				312D530A281593FE00F236A3 /* Networking */,
+				312D5309281593DE00F236A3 /* Views */,
 				3140729327B165F900062C53 /* TCAPracticeApp.swift */,
-				3140729427B165F900062C53 /* ContentView.swift */,
+				312D53062815933D00F236A3 /* AppState.swift */,
 				3140729527B165FA00062C53 /* Assets.xcassets */,
-				314072D227B4453D00062C53 /* CatDetailsView.swift */,
-				314072D527B4454C00062C53 /* CatsListView.swift */,
-				314072D827B4459C00062C53 /* FavCatsListView.swift */,
-				31788C3127D559E200E76F5D /* Client.swift */,
-				31788C3427D55B4500E76F5D /* Requests.swift */,
-				31C77F7727E0E4EB00C9A0C0 /* Decoder.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -334,6 +354,7 @@
 				314072BD27B165FA00062C53 /* ContentView.swift in Sources */,
 				314072D327B4453D00062C53 /* CatDetailsView.swift in Sources */,
 				31788C3227D559E200E76F5D /* Client.swift in Sources */,
+				312D53072815933D00F236A3 /* AppState.swift in Sources */,
 				314072BB27B165FA00062C53 /* TCAPracticeApp.swift in Sources */,
 				314072D627B4454C00062C53 /* CatsListView.swift in Sources */,
 				31788C3527D55B4500E76F5D /* Requests.swift in Sources */,
@@ -349,6 +370,7 @@
 				314072BE27B165FA00062C53 /* ContentView.swift in Sources */,
 				314072D427B4453D00062C53 /* CatDetailsView.swift in Sources */,
 				31788C3327D559E200E76F5D /* Client.swift in Sources */,
+				312D53082815933D00F236A3 /* AppState.swift in Sources */,
 				314072BC27B165FA00062C53 /* TCAPracticeApp.swift in Sources */,
 				314072D727B4454C00062C53 /* CatsListView.swift in Sources */,
 				31788C3627D55B4500E76F5D /* Requests.swift in Sources */,

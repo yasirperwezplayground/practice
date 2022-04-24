@@ -39,7 +39,10 @@ import Combine
  }
  */
 
-
+//struct CatDatailsViewState {
+//  let catonScreen: FavoriteCat
+//  let favorites: Set<FavoriteCat>
+//}
 
 struct FavEditResponse: Decodable {
   var id: Int?
@@ -58,22 +61,19 @@ struct CatDetailsEnvironment {
 
 let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppEnvironment> {
   state, action, environment in
-//  print("RDDDD catDetailsViewReducer \(action)")
   switch action {
   case .favoriteToggleTapped(let isFav, let cat):
     
     if isFav {
-      // FIXME: USE FIRE AND FORGET ACTION
       guard let catId = cat.id else { return .none }
       return environment.removeFromFav(String(catId))
         .receive(on: environment.mainQueue)
         .catchToEffect { _ in
+          // check if removal is right else show error
           CatDetailsViewAction.favRemoved(cat)
         }
-      
     } else {
       guard let catId = cat.image?.id else { return .none }
-      
       
       /// to transform a  like Publisher<String, CatApiError> to Effect<String, Never>
       /// I used catchToEffect( with a closure to tranform both of result cases to CatDetailsViewAction
@@ -81,9 +81,8 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
       ///
       return environment.addToFav(catId)
         .receive(on: environment.mainQueue)
-        .map { $0.id } // Publisher<String, CatApiError>
+        .map { $0.id } // map return => Publisher<String, CatApiError>
         .catchToEffect { result -> CatDetailsViewAction in // (Result<String, CatApiError>) -> T
-//          print( "Result:===> \(result)" )
           switch result {
           case .success(let id):
             var favCat = cat
@@ -113,31 +112,30 @@ struct CatDetailsView: View {
   
   var body: some View {
     WithViewStore(self.store) { viewStore in
-      let favCat = viewStore.state.findFirst(cat.image?.id) ?? self.cat
+//      let favCat = viewStore.state.findFirst(cat.image?.id) ?? self.cat
+//      let favCat = self.cat
       VStack {
         AsyncImage(
           url: URL(
-            string: favCat.image?.url ?? ""
+            string: self.cat.image?.url ?? ""
           ),
           content: { image in
             image.resizable()
               .aspectRatio(contentMode: .fit)
-            
           },
           placeholder: { ProgressView() }
         )
         Button(
           action: {
-            viewStore.send(.favoriteToggleTapped(viewStore.state.findFirst(cat.image?.id) != nil, favCat))
+            viewStore.send(.favoriteToggleTapped(viewStore.state.findFirst(self.cat.image?.id) != nil, self.cat))
           } ,
           label: {
             Image(systemName: "heart.circle")
               .foregroundColor(
-                viewStore.state.findFirst(cat.image?.id) != nil ? .red : .gray
+                viewStore.state.findFirst(self.cat.image?.id) != nil ? .red : .gray
               )
           }
         )
-        
       }
     }
   }

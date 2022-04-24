@@ -1,3 +1,9 @@
+//
+//  AppState.swift
+//  TCAPractice
+//
+//  Created by Mohammad Yasir Perwez on 24.04.22.
+//
 
 import ComposableArchitecture
 import SwiftUI
@@ -8,7 +14,6 @@ import Combine
 /// Cats api key
 /// dc34ebc3-5565-417d-9685-a2b285896efc
 /// https://api.thecatapi.com/v1/images/search
-
 
 struct AppState: Equatable {
   var cats: [Cat]
@@ -40,80 +45,6 @@ extension AppState {
   static var initial = AppState()
 }
 
-extension AppEnvironment {
-  static func live(
-    webService: Webservice
-  ) -> AppEnvironment {
-    return AppEnvironment(
-      getCats: { page in
-        webService.fetch(
-          request: RequestBuilder.getCatsRequest(page: page)
-        ).eraseToEffect()
-      },
-      getFavCats: {
-        webService.fetch(
-          request: RequestBuilder.getFavCatRequest()
-        ).eraseToEffect()
-      },
-      addToFav: { id in
-        webService.fetch(request: RequestBuilder.addToFavRequest(id: id))
-          .eraseToEffect()
-      },
-      removeFromFav: { id in
-        webService.fetch(request: RequestBuilder.deleteFavCatRequest(id: id))
-          .eraseToEffect()
-      },
-      mainQueue: DispatchQueue.main
-    )
-    
-  }
-}
-
-/// Custom case path . But this approach does  not looks good.
-/// We should try to arrage the state in a other way.
-///  the problem here was that catDetailsViewAction is a case of both enum CatsListViewAction CatFavoriteViewAction.
-///  It is the case of shared action same enum is nested in two different hirarcy
-///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
-///
-let datailsCatPath =  CasePath.init(
-  embed: { catDetailsAction  in
-    
-    AppAction.favoriteAction(.catDetailsViewAction(catDetailsAction))
-  },
-  extract: { appAction in
-    switch appAction {
-    case .catsListActions(.catDetailsViewAction(let local)):
-      return local
-    case .favoriteAction(.catDetailsViewAction(let local)):
-      return local
-    default: return nil
-    }
-  })
-
-
-let appReducer = Reducer.combine(
-  
-  catDetailsViewReducer
-    .pullback(
-      state: \AppState.favoriteCats,
-      action:  datailsCatPath,
-      environment: { $0 }
-    ),
-  catsListViewReducer
-    .pullback(
-      state: \AppState.catsListViewState,
-      action: /AppAction.catsListActions,
-      environment: { $0 }
-    ),
-  favoriteViewreducer
-    .pullback(
-      state: \AppState.catFavoriteViewState,
-      action: /AppAction.favoriteAction,
-      environment: { $0 }
-    )
-)//.debug()
-
-
 extension AppState {
   var catsListViewState: CatsListViewState {
     get {
@@ -140,42 +71,99 @@ extension AppState {
   }
 }
 
-//MARK: - MainView
-struct MainView: View {
-  let store: Store<AppState, AppAction>
-  var body: some View {
-    NavigationView {
-      VStack(spacing: 8) {
-        NavigationLink(
-          destination: {
-            CatsListView(
-              store: self.store.scope(
-                state: { $0.catsListViewState },
-                action: AppAction.catsListActions)
-            )
-            
-          },
-          label: { Text("Cats")}
-        )
-        NavigationLink(
-          destination: {
-            FavCatListView(
-              store: self.store.scope(
-                state: { $0.catFavoriteViewState },
-                action: AppAction.favoriteAction
-              )
-            )
-          },
-          label: { Text("Fav Cats")}
-        )
-      }
-    }
-    .navigationTitle("Cats")
+extension AppEnvironment {
+  static func live(
+    webService: Webservice
+  ) -> AppEnvironment {
+    return AppEnvironment(
+      getCats: { page in
+        webService.fetch(
+          request: RequestBuilder.getCatsRequest(page: page)
+        ).eraseToEffect()
+      },
+      getFavCats: {
+        webService.fetch(
+          request: RequestBuilder.getFavCatRequest()
+        ).eraseToEffect()
+      },
+      addToFav: { id in
+        webService.fetch(request: RequestBuilder.addToFavRequest(id: id))
+          .eraseToEffect()
+      },
+      removeFromFav: { id in
+        webService.fetch(request: RequestBuilder.deleteFavCatRequest(id: id))
+          .eraseToEffect()
+      },
+      mainQueue: DispatchQueue.main
+    )
   }
 }
 
+/// Custom case path . But this approach does  not looks good.
+/// We should try to arrage the state in a other way.
+///  the problem here was that catDetailsViewAction is a case of both enum CatsListViewAction CatFavoriteViewAction.
+///  It is the case of shared action same enum is nested in two different hirarcy
+///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
+///
+let datailsCatPath =  CasePath.init(
+  embed: { catDetailsAction  in
+    
+    AppAction.favoriteAction(.catDetailsViewAction(catDetailsAction))
+  },
+  extract: { appAction in
+    switch appAction {
+    case .catsListActions(.catDetailsViewAction(let local)):
+      return local
+    case .favoriteAction(.catDetailsViewAction(let local)):
+      return local
+    default: return nil
+    }
+  })
 
 
+//let appReducer = Reducer.combine(
+//
+//  catDetailsViewReducer
+//    .pullback(
+//      state: \AppState.favoriteCats,
+//      action:  datailsCatPath,
+//      environment: { $0 }
+//    ),
+//  catsListViewReducer
+//    .pullback(
+//      state: \AppState.catsListViewState,
+//      action: /AppAction.catsListActions,
+//      environment: { $0 }
+//    ),
+//  favoriteViewreducer
+//    .pullback(
+//      state: \AppState.catFavoriteViewState,
+//      action: /AppAction.favoriteAction,
+//      environment: { $0 }
+//    )
+//)//.debug()
+
+let appReducer = Reducer.combine(
+
+  catDetailsViewReducer
+    .pullback(
+      state: \AppState.favoriteCats,
+      action:  datailsCatPath,
+      environment: { $0 }
+    ),
+  catsListViewReducer
+    .pullback(
+      state: \AppState.catsListViewState,
+      action: /AppAction.catsListActions,
+      environment: { $0 }
+    ),
+  favoriteViewreducer
+    .pullback(
+      state: \AppState.catFavoriteViewState,
+      action: /AppAction.favoriteAction,
+      environment: { $0 }
+    )
+)//.debug()
 
 
 

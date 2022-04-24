@@ -80,7 +80,6 @@ struct CatFavoriteViewState: Equatable {
 
 let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, AppEnvironment> {
   state, action, environment in
-//  print("RDDDD favoriteViewreducer \(action)")
   
   switch action {
   case .fetchFavoriteCats:
@@ -152,8 +151,7 @@ struct FavCatListView: View {
               NavigationLink(
                 destination: {
                   CatDetailsView(
-                    cat: viewStore.favoriteCats.findFirst(cat.image?.id)
-                    ?? FavoriteCat(from: cat.image!),
+                    cat: cat,
                     store: self.store.scope(
                       state: { $0.favoriteCats },
                       action: CatFavoriteViewAction.catDetailsViewAction

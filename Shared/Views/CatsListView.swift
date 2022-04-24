@@ -36,7 +36,6 @@ enum CatsListViewAction: Equatable {
 let catsListViewReducer =
 Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
   state, action, environment in
-//  print("RDDDD catsListViewReducer \(action)")
   switch action {
   case .fetchCats:
     return environment.getCats(state.currentPage)
@@ -107,7 +106,6 @@ struct CatsListView: View {
                     
                   }
                 )
-                
               }
             }
           }

@@ -9,16 +9,11 @@ import SwiftUI
 import ComposableArchitecture
 
 @main
-
-
 struct TCAPracticeApp: App {
   let webservice: Webservice
   
   init() {
-    self.webservice = Webservice(
-      networking: URLSession.shared.erasedDataTaskPublisher(for:),
-      requestBuilder: RequestBuilder().urlRequest(requestData:)
-    )
+    self.webservice = Webservice.live
   }
   
   var body: some Scene {

@@ -90,7 +90,7 @@ typealias RequestToUrlReqeust = (RequestData) -> URLRequest?
  - All decodeing related error should be logged and monitored in decode() function
  - Header enrichment should happen in the RequestToUrlReqeust func i.e it should be part of request builder. There should be a separate func which adds the required header based on the type of request [open|authenticaste]. Do we also need to have separate func to add header for other endpoints like log/analytics?
  */
-class Webservice {
+struct Webservice {
   ///    Dependencies
   let networking: Networking
   var requestBuilder: RequestToUrlReqeust
@@ -103,12 +103,16 @@ class Webservice {
     self.requestBuilder = requestBuilder
   }
   
+}
+
+extension Webservice {
+  
   public func fetch<Model: Decodable>(
     request: Request<Model>
   ) -> AnyPublisher<Model, CatApiError> {
     
     // Convert the Request<Model> into URL request
-    guard let request = requestBuilder(
+    guard let request = self.requestBuilder(
       request.data
     ) else {
       return Result.Publisher(
@@ -123,6 +127,13 @@ class Webservice {
       .mapError{ _ in CatApiError.unknown }
       .eraseToAnyPublisher()
   }
+}
+
+extension Webservice {
+  static let live = Self(
+    networking: URLSession.shared.erasedDataTaskPublisher(for:),
+    requestBuilder: RequestBuilder().urlRequest(requestData:)
+  )
 }
 
 extension Publisher where Output == Data {
