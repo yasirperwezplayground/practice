@@ -30,6 +30,9 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
   switch action {
   case .favoriteToggled(let isFav, let cat):
     
+    let savedDic = readFromUserDefault(forKey: "Test1")
+    print("MMMMMM \(savedDic)")
+    
     if isFav {
       guard let catId = cat.id else { return .none }
       return environment.removeFromFav(String(catId))

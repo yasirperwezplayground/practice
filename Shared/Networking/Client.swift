@@ -77,6 +77,8 @@ struct Request<T: Decodable> {
 typealias Networking = (URLRequest) ->
 AnyPublisher<(data: Data, response: URLResponse), Error>
 
+
+
 /// Shape of the function which takes RequestData and transforms it to URLRequest
 typealias RequestToUrlReqeust = (RequestData) -> URLRequest?
 
@@ -102,7 +104,6 @@ struct Webservice {
     self.networking = networking
     self.requestBuilder = requestBuilder
   }
-  
 }
 
 extension Webservice {
@@ -131,7 +132,7 @@ extension Webservice {
 
 extension Webservice {
   static let live = Self(
-    networking: URLSession.shared.erasedDataTaskPublisher(for:),
+    networking: loggedNetworking(PrintLogger())(URLSession.shared.erasedDataTaskPublisher(for:)) ,
     requestBuilder: RequestBuilder().urlRequest(requestData:)
   )
 }
@@ -145,6 +146,7 @@ extension Publisher where Output == Data {
     decode(type: type, decoder: decoder)
   }
 }
+//TODO: push app relate info to Requestbuilder.
 
 
 extension JSONDecoder {
@@ -207,9 +209,29 @@ extension URLSession {
 }
 
 
-protocol NetworkingLogger {
+protocol Logger {
   func logError(message: String)
+}
+
+struct PrintLogger: Logger{
+  func logError(message: String) {
+    print("Logging \(message)")
+  }
+}
+
+let loggedNetworking: (Logger) -> (@escaping Networking) -> Networking =
+{
+  logger in {
+    networking in
+    { urlRequest in
+      logger.logError(message: "Before")
+     return  networking(urlRequest).mapError { _ in CatApiError.unknown }
+        .eraseToAnyPublisher()
+    }
+  }
 }
 
 
 
+//(URLRequest) ->
+//AnyPublisher<(data: Data, response: URLResponse), Error>

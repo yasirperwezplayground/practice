@@ -13,7 +13,6 @@ struct Cat: Decodable, Equatable, Identifiable, Hashable {
   let id: String?
   let url: String?
   
-  
   func hash(into hasher: inout Hasher) {
     hasher.combine(id)
     hasher.combine(url)
