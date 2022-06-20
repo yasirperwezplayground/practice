@@ -1,11 +1,11 @@
-
 import ComposableArchitecture
 import SwiftUI
-import UIKit
 import Combine
 
 struct MainView: View {
+  
   let store: Store<AppState, AppAction>
+  
   var body: some View {
     NavigationView {
       VStack(spacing: 8) {
@@ -17,7 +17,10 @@ struct MainView: View {
                 action: AppAction.catsListActions)
             )
           },
-          label: { Text("Cats")}
+          label: {
+            Text("All Cates")
+              .font(.title3)
+          }
         )
         NavigationLink(
           destination: {
@@ -28,11 +31,10 @@ struct MainView: View {
               )
             )
           },
-          label: { Text("Fav Cats")}
+          label: { Text("My Favorites")}
         )
-      }
+      }.navigationTitle("Cuties")
     }
-    .navigationTitle("Cats")
   }
 }
 

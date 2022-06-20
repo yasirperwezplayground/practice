@@ -80,7 +80,7 @@ struct CatFavoriteViewState: Equatable {
  */
 
 let favoriteViewreducerEnriched = Reducer.combine (
-  favoriteViewreducer,
+  myFavoriteCatsListViewReducer,
   catDetailsViewReducer.pullback(
     state: \CatFavoriteViewState.favoriteCats,
     action: /CatFavoriteViewAction.catDetailsViewAction,
@@ -88,7 +88,7 @@ let favoriteViewreducerEnriched = Reducer.combine (
   )
 )
 
-let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, AppEnvironment> {
+let myFavoriteCatsListViewReducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, AppEnvironment> {
   state, action, environment in
   
   switch action {
@@ -98,7 +98,12 @@ let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, A
       .catchToEffect(CatFavoriteViewAction.fetchFavoriteCatsResponse)
     
   case .fetchFavoriteCatsResponse(.success(let cats)):
-    print("\(cats)")
+    dump(
+      cats,
+      name: "My Favorite cats list",
+      indent: 2
+    )
+    
     state.favoriteCats = Set(cats)
     return .none
     
@@ -113,7 +118,6 @@ let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, A
       .catchToEffect{ result -> CatFavoriteViewAction in
         switch result {
         case .success(let repsonse):
-          print("\(repsonse.message ?? "")")
           
           return .favCatRemoved(favCat)
         case .failure(let error):
@@ -131,7 +135,6 @@ let favoriteViewreducer = Reducer<CatFavoriteViewState, CatFavoriteViewAction, A
     return .none
   }
 }
-
 
 struct FavCatView: View {
   let cat: FavoriteCat
@@ -155,7 +158,6 @@ struct FavCatListView: View {
       ScrollView {
         WithViewStore(self.store) { viewStore in
           let cats = Array<FavoriteCat>(viewStore.favoriteCats)
-          let _ = print("FavCatListView \(cats)")
           LazyVStack {
             ForEach(cats) { cat in
               NavigationLink(
@@ -176,7 +178,7 @@ struct FavCatListView: View {
                 }
               )
             }
-          }
+          }.navigationTitle("My Favorites")
           .task {
             viewStore.send(.fetchFavoriteCats)
           }

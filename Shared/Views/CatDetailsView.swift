@@ -31,14 +31,14 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
   case .favoriteToggled(let isFav, let cat):
     
     let savedDic = readFromUserDefault(forKey: "Test1")
-    print("MMMMMM \(savedDic)")
     
     if isFav {
       guard let catId = cat.id else { return .none }
-      return environment.removeFromFav(String(catId))
+      return environment
+        .removeFromFav(String(catId))
         .receive(on: environment.mainQueue)
         .catchToEffect { _ in
-          // check if removal is right else show error
+          //TODO: check if removal is right else show error
           CatDetailsViewAction.favRemoved(cat)
         }
     } else {
@@ -48,7 +48,8 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
       /// I have used catchToEffect( with a closure to tranform both of result cases to CatDetailsViewAction
       /// need to watchout for a simple way to tranforms them
       ///
-      return environment.addToFav(catId)
+      return environment
+        .addToFav(catId)
         .receive(on: environment.mainQueue)
         .map { $0.id } // map return => Publisher<String, CatApiError>
         .catchToEffect { result -> CatDetailsViewAction in // (Result<String, CatApiError>) -> T
@@ -94,6 +95,7 @@ struct CatDetailsView: View {
         ).cornerRadius(16.0)
         Button(
           action: {
+            //TODO: Logic from the view is to be  moved
             viewStore.send(
               .favoriteToggled(
                 viewStore.state.findFirst(
@@ -105,46 +107,13 @@ struct CatDetailsView: View {
           label: {
             Image(systemName: "heart.circle")
               .foregroundColor(
+                //TODO: Logic from the view is to be  moved
                 viewStore.state.findFirst(self.cat.image?.id) != nil ? .red : .gray
               )
           }
         )
       }.padding()
+        .navigationTitle("Details")
     }
   }
 }
-
-
-
-
-//struct CatDetails: Decodable {
-//  let id: String?
-//  let url: String?
-//  let subId: String?
-//  let createdId: String?
-//
-//  enum CodingKeys: String, CodingKey {
-//    case subId = "sub_id"
-//    case createdId = "created_id"
-//    case id
-//    case url
-//  }
-//}
-
-//struct CatsDetailsViewState {
-//  var cat: Cat
-//  var isFavorite: Bool
-//}
-
-
-/*
- {
- "id": 2146538,
- "message": "SUCCESS"
- }
- */
-
-//struct CatDatailsViewState {
-//  let catonScreen: FavoriteCat
-//  let favorites: Set<FavoriteCat>
-//}

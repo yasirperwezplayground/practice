@@ -40,7 +40,6 @@ let catsListViewReducerEnriched = Reducer.combine(
   )
 )
 
-
 let catsListViewReducer =
 Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
   state, action, environment in
@@ -51,6 +50,7 @@ Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
       .catchToEffect(CatsListViewAction.fetchedCats)
     
   case .fetchedCats(.success(let cats)):
+    dump(cats)
     state.cats.append(contentsOf: cats)
     print("Error in \(state.cats.count)")
     return .none
@@ -61,6 +61,7 @@ Reducer<CatsListViewState, CatsListViewAction, AppEnvironment> {
     return .none
   }
 }
+
 ///A cell in CatsListView
 struct CatView: View {
   var cat: Cat
@@ -118,7 +119,7 @@ struct CatsListView: View {
             }
           }
         }.padding(16)
-      }
+      }.navigationTitle("All Cats")
       .task {
         viewStore.send(.fetchCats)
       }

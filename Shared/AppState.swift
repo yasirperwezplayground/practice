@@ -141,5 +141,50 @@ let appReducer = Reducer.combine(
     )
 )
 
+extension AppEnvironment {
+  static func mock() -> AppEnvironment {
+    return AppEnvironment(
+      getCats: { page in
+        Just([
+          Cat.mockCat
+        ]).setFailureType(to: CatApiError.self)
+          .eraseToEffect()
+        // just has of type <Output, Never>
+        // Effect<Output, Failure: Error>
+//        Effect(value: [ Cat(id: "1", url: "www.cat.com")])
+      },
+      getFavCats: {
+        Just([
+          FavoriteCat.mockFavoriteCat
+        ]).setFailureType(to: CatApiError.self)
+          .eraseToEffect()
+      },
+      addToFav: { id in
+        Just(FavEditResponse.mockFavEditResponse)
+          .setFailureType(to: CatApiError.self)
+          .eraseToEffect()
+      },
+      removeFromFav: { id in
+        Effect(value: FavEditResponse.mockFavEditResponse)
+      },
+      mainQueue: DispatchQueue.main
+    )
+  }
+}
 
+extension Cat {
+  static var mockCat: Cat { Self.init(id: "1", url: "www.cat.com") }
+}
 
+extension FavoriteCat {
+  static var mockFavoriteCat: FavoriteCat { Self.init(id: 1234, image: Cat.mockCat) }
+}
+
+extension FavEditResponse {
+  static var mockFavEditResponse: FavEditResponse {
+    Self.init(
+      id: 1234,
+      message: "Mock"
+    )
+  }
+}
