@@ -16,10 +16,11 @@ import Combine
 /// https://api.thecatapi.com/v1/images/search
 
 struct AppState: Equatable {
+    
   var cats: [Cat]
   var favoriteCats: Set<FavoriteCat>
-  
   var currentPage: Int
+    
   public init() {
     self.cats = []
     self.currentPage = 0
@@ -38,7 +39,8 @@ struct AppEnvironment {
   var getFavCats: () -> Effect<[FavoriteCat], CatApiError>
   var addToFav: (String) -> Effect<FavEditResponse, CatApiError>
   var removeFromFav: (String) -> Effect<FavEditResponse, CatApiError>
-  var mainQueue: DispatchQueue
+  var storageClient: CatFavoriteStore
+  var mainQueue: AnySchedulerOf<DispatchQueue>
 }
 
 extension AppState {
@@ -94,36 +96,29 @@ extension AppEnvironment {
         webService.fetch(request: RequestBuilder.deleteFavCatRequest(id: id))
           .eraseToEffect()
       },
-      mainQueue: DispatchQueue.main
+      storageClient: CatFavoriteStore(
+        storeInUserDefault: { data, key in
+          let encoder = JSONEncoder()
+          encoder.outputFormatting = [.prettyPrinted]
+          encoder.dataEncodingStrategy = .base64
+          guard let jsonData = try? encoder.encode(data) else { return }
+          let jsonString = String(bytes: jsonData, encoding: .utf8)
+
+          UserDefaults.standard.set(jsonString, forKey: key)
+          UserDefaults.standard.synchronize()
+        }, readFromUserDefault: { key in
+          guard let jsonString = UserDefaults.standard.string(forKey: key),
+                let jsonData = jsonString.data(using: .utf8),
+                let value = try? JSONDecoder().decode(StoreInUserDefault.self, from: jsonData) else {
+            return nil
+          }
+          return value
+        }
+      ),
+      mainQueue: .main
     )
   }
 }
-
-/// Custom case path. Was used to read and embed values from CatsListViewAction and CatFavoriteViewAction to get catDetailsViewAction
-/// We should try to arrage the state in a other way.
-///  the problem here was that catDetailsViewAction is a case of both enum CatsListViewAction CatFavoriteViewAction.
-///  It is the case of shared action same enum is nested in two different hirarcy
-///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
-/// But this approach does  not looks good. So as jaleel suggest we could also combine the CatsListView reduce and CatsDetailsViewReducer and same with FavCatslistViewReducer.
-/*
-let datailsCatPath =  CasePath.init(
-  embed: { catDetailsAction  in
-    
-    AppAction.favoriteAction(.catDetailsViewAction(catDetailsAction))
-  },
-  extract: { appAction in
-    switch appAction {
-    case .catsListActions(.catDetailsViewAction(let local)):
-      return local
-    case .favoriteAction(.catDetailsViewAction(let local)):
-      return local
-    default: return nil
-    }
-  })
- 
- */
-
-
 
 let appReducer = Reducer.combine(
 
@@ -166,8 +161,14 @@ extension AppEnvironment {
       },
       removeFromFav: { id in
         Effect(value: FavEditResponse.mockFavEditResponse)
-      },
-      mainQueue: DispatchQueue.main
+      }, storageClient: CatFavoriteStore(
+        storeInUserDefault: { data, key in
+          
+        }
+        , readFromUserDefault: { key in
+          StoreInUserDefault(number: 2, string: "test")
+        }),
+      mainQueue: .main
     )
   }
 }
@@ -188,3 +189,33 @@ extension FavEditResponse {
     )
   }
 }
+
+
+
+
+
+
+
+/// Custom case path. Was used to read and embed values from CatsListViewAction and CatFavoriteViewAction to get catDetailsViewAction
+/// We should try to arrage the state in a other way.
+///  the problem here was that catDetailsViewAction is a case of both enum CatsListViewAction CatFavoriteViewAction.
+///  It is the case of shared action same enum is nested in two different hirarcy
+///  We can compose the cats details reducer and Catlist reduce and we can also compose the favcatlist reducer with catdetails reduce
+/// But this approach does  not looks good. So as jaleel suggest we could also combine the CatsListView reduce and CatsDetailsViewReducer and same with FavCatslistViewReducer.
+/*
+let datailsCatPath =  CasePath.init(
+  embed: { catDetailsAction  in
+    
+    AppAction.favoriteAction(.catDetailsViewAction(catDetailsAction))
+  },
+  extract: { appAction in
+    switch appAction {
+    case .catsListActions(.catDetailsViewAction(let local)):
+      return local
+    case .favoriteAction(.catDetailsViewAction(let local)):
+      return local
+    default: return nil
+    }
+  })
+ 
+ */

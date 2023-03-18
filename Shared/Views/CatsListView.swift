@@ -67,24 +67,38 @@ struct CatView: View {
   var cat: Cat
   
   var body: some View {
-    VStack {
-      AsyncImage(
-        url: URL(
-          string: self.cat.url ?? ""
-        ),
-        content: { image in
-          image.resizable()
-            .aspectRatio(
-              contentMode: .fit
-            )
-        },
-        placeholder: {
-          ProgressView()
-        }
-      )
-      Text(self.cat.id ?? "")
+//    ZStack {
+//      RoundedRectangle(cornerRadius: 12)
+//        .stroke(
+//          Color(.sRGB, red: 150/255, green: 150/255, blue: 150/255, opacity: 0.8),
+//          lineWidth: 1
+//        )
+      VStack {
+        AsyncImage(
+          url: URL(
+            string: self.cat.url ?? ""
+          ),
+          content: { image in
+            image.resizable()
+              .aspectRatio(
+                contentMode: .fit
+              )
+          },
+          placeholder: {
+            ProgressView()
+          }
+        ).cornerRadius(12)
+        
+        Text(self.cat.id ?? "")
+      }.padding(8)
+      
+      .background(Color.white)
+      .cornerRadius(12)
+      .shadow(color: .black.opacity(0.5), radius: 12)
+      .padding()
     }
-  }
+      
+//  }
 }
 
 struct CatsListView: View {
@@ -92,13 +106,17 @@ struct CatsListView: View {
   
   var body: some View {
     WithViewStore(self.store) { viewStore in
-      ScrollView{
-        VStack(spacing: 8) {
-          if viewStore.cats.isEmpty {
-            Text("Loading")
-            ProgressView()
+      GeometryReader { reader in
+      ScrollView {
+        VStack(alignment: .center, spacing: 16) {
+            if viewStore.cats.isEmpty {
+              HStack(alignment: .center) {
+                ProgressView {
+                  Text("Loading cats")
+                }
+              }.frame(width: reader.size.width, height: reader.size.height)
           } else {
-            LazyVStack {
+            LazyVStack(spacing: 32) {
               ForEach(viewStore.cats) { cat in
                 NavigationLink(
                   destination: {
@@ -112,14 +130,16 @@ struct CatsListView: View {
                   },
                   label: {
                     CatView(cat: cat)
-                    
+                      
                   }
                 )
               }
             }
           }
-        }.padding(16)
-      }.navigationTitle("All Cats")
+        }
+          .padding(16)
+      }
+    }.navigationTitle("All Cats")
       .task {
         viewStore.send(.fetchCats)
       }

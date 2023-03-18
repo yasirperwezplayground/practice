@@ -35,21 +35,17 @@ class CatDetailsViewTest: XCTestCase {
       cat: favoriteCat,
       store: store
     )
-
-    isRecording = true
-    
-    let expectation = self.expectation(description: "wait")
-    DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-      expectation.fulfill()
-    }
-    self.wait(for: [expectation], timeout: 30)
-    
-    
     let vc = UIHostingController(rootView: catDetailsView)
     vc.view.frame = UIScreen.main.bounds
     // should be favorite
+    let expectation = self.expectation(description: "wait")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+      expectation.fulfill()
+    }
+    self.wait(for: [expectation], timeout: 5)
+    
     assertSnapshot(matching: vc, as: .image)
-    viewStore.send(.favRemoved(favoriteCat))
+//    viewStore.send(.favRemoved(favoriteCat))
     // should not be favorite
     let vc1 = UIHostingController(rootView: CatDetailsView(
       cat: favoriteCat,
@@ -74,11 +70,49 @@ class CatDetailsViewTest: XCTestCase {
     assertSnapshot(matching: string, as: .lines)
   }
   
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+  func testCatDetailsSwiftUIStrategy() {
+    let favoriteCat = FavoriteCat(
+      id: 1234,
+      image: Cat(
+        id: "12345",
+        url: "https://cdn2.thecatapi.com/images/_LwjLMlVA.jpg"
+      )
+    )
+    let store = Store(
+      initialState: Set([favoriteCat]),
+      reducer: catDetailsViewReducer,
+      environment: AppEnvironment.mock()
+    )
+    let viewStore = ViewStore(store)
+    
+    let catDetailsView = CatDetailsView(
+      cat: favoriteCat,
+      store: store
+    )
+    isRecording = true
+    let expectation = self.expectation(description: "wait")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+      expectation.fulfill()
     }
-
+    self.wait(for: [expectation], timeout: 5)
+    
+    assertSnapshots(matching: catDetailsView, as: [.image(layout: .device(config: .iPhoneXsMax))])
+  }
 }
+
+/*
+extension Snapshotting where Value: CatDetailsView, Format == UIImage {
+  static var asyncUI: Snapshotting {
+    return Snapshotting<SwiftUI.View, UIImage>.image.asyncPullback { view in
+      Async<UIImage> { callback in
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+          let image = Snapshotting.image
+          callback()
+        }
+      }
+    }
+  }
+}
+
+*/

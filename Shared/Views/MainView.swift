@@ -31,7 +31,7 @@ struct MainView: View {
               )
             )
           },
-          label: { Text("My Favorites")}
+          label: { Text("Inaaya's Favorites")}
         )
       }.navigationTitle("Cuties")
     }

@@ -30,6 +30,8 @@
 		31788C3327D559E200E76F5D /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31788C3127D559E200E76F5D /* Client.swift */; };
 		31788C3527D55B4500E76F5D /* Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31788C3427D55B4500E76F5D /* Requests.swift */; };
 		31788C3627D55B4500E76F5D /* Requests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31788C3427D55B4500E76F5D /* Requests.swift */; };
+		3179259628A12E1900BCC06B /* ExpandatbleText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3179259528A12E1900BCC06B /* ExpandatbleText.swift */; };
+		3179259728A12E1900BCC06B /* ExpandatbleText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3179259528A12E1900BCC06B /* ExpandatbleText.swift */; };
 		31C77F7827E0E4EB00C9A0C0 /* Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C77F7727E0E4EB00C9A0C0 /* Decoder.swift */; };
 		31C77F7927E0E4EB00C9A0C0 /* Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C77F7727E0E4EB00C9A0C0 /* Decoder.swift */; };
 		31DB9753285F5C3800F9A1A5 /* TCAPracticeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DB9752285F5C3800F9A1A5 /* TCAPracticeUnitTests.swift */; };
@@ -82,6 +84,7 @@
 		314072D827B4459C00062C53 /* MyFavoriteCatsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFavoriteCatsListView.swift; sourceTree = "<group>"; };
 		31788C3127D559E200E76F5D /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
 		31788C3427D55B4500E76F5D /* Requests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Requests.swift; sourceTree = "<group>"; };
+		3179259528A12E1900BCC06B /* ExpandatbleText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandatbleText.swift; sourceTree = "<group>"; };
 		31C77F7727E0E4EB00C9A0C0 /* Decoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Decoder.swift; sourceTree = "<group>"; };
 		31DB9750285F5C3800F9A1A5 /* TCAPracticeUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TCAPracticeUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		31DB9752285F5C3800F9A1A5 /* TCAPracticeUnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCAPracticeUnitTests.swift; sourceTree = "<group>"; };
@@ -143,6 +146,7 @@
 				314072D527B4454C00062C53 /* CatsListView.swift */,
 				314072D827B4459C00062C53 /* MyFavoriteCatsListView.swift */,
 				314072D227B4453D00062C53 /* CatDetailsView.swift */,
+				3179259528A12E1900BCC06B /* ExpandatbleText.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -435,6 +439,7 @@
 				314072BB27B165FA00062C53 /* TCAPracticeApp.swift in Sources */,
 				314072D627B4454C00062C53 /* CatsListView.swift in Sources */,
 				31788C3527D55B4500E76F5D /* Requests.swift in Sources */,
+				3179259628A12E1900BCC06B /* ExpandatbleText.swift in Sources */,
 				31C77F7827E0E4EB00C9A0C0 /* Decoder.swift in Sources */,
 				314072D927B4459C00062C53 /* MyFavoriteCatsListView.swift in Sources */,
 			);
@@ -451,6 +456,7 @@
 				314072BC27B165FA00062C53 /* TCAPracticeApp.swift in Sources */,
 				314072D727B4454C00062C53 /* CatsListView.swift in Sources */,
 				31788C3627D55B4500E76F5D /* Requests.swift in Sources */,
+				3179259728A12E1900BCC06B /* ExpandatbleText.swift in Sources */,
 				31C77F7927E0E4EB00C9A0C0 /* Decoder.swift in Sources */,
 				314072DA27B4459C00062C53 /* MyFavoriteCatsListView.swift in Sources */,
 			);
@@ -822,7 +828,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TCAPractice.app/TCAPractice";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TCAPractice.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TCAPractice";
 			};
 			name = Debug;
 		};
@@ -842,7 +848,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TCAPractice.app/TCAPractice";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TCAPractice.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TCAPractice";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -911,8 +917,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.52.0;
 			};
 		};
 		31DB975A285F72CA00F9A1A5 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {

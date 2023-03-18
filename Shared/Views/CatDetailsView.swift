@@ -30,7 +30,7 @@ let catDetailsViewReducer = Reducer<Set<FavoriteCat>, CatDetailsViewAction, AppE
   switch action {
   case .favoriteToggled(let isFav, let cat):
     
-    let savedDic = readFromUserDefault(forKey: "Test1")
+    let savedDic = environment.storageClient.readFromUserDefault("Test1")
     
     if isFav {
       guard let catId = cat.id else { return .none }
@@ -88,6 +88,7 @@ struct CatDetailsView: View {
             string: self.cat.image?.url ?? ""
           ),
           content: { image in
+            let _ = print("CatDetailsView image fetched \(image)")
             image.resizable()
               .aspectRatio(contentMode: .fit)
           },

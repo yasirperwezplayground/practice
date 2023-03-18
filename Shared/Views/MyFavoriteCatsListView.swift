@@ -178,7 +178,7 @@ struct FavCatListView: View {
                 }
               )
             }
-          }.navigationTitle("My Favorites")
+          }.navigationTitle("Inaaya's Favorites")
           .task {
             viewStore.send(.fetchFavoriteCats)
           }

@@ -21,19 +21,6 @@ extension RequestBuilder {
     )
   }
   
-//  static func getFavCatRequest(id: String) -> Request<[FavoriteCat]> {
-//    Request<[FavoriteCat]>.init(
-//      data: RequestData(
-//        path: "/v1/favourites",
-//        queryItems: [
-//          URLQueryItem(name: "limit", value: "\(100)")
-//        ],
-//        method: .get
-//      )
-//    )
-//  }
-  
-  
   static func addToFavRequest(id: String) -> Request<FavEditResponse> {
     Request<FavEditResponse>.init(
       data: RequestData(
@@ -57,7 +44,6 @@ extension RequestBuilder {
         method: .get
       )
     )
-    
   }
   
   static func deleteFavCatRequest(id: String) -> Request<FavEditResponse> {
@@ -69,15 +55,5 @@ extension RequestBuilder {
       )
     )
   }
-  
 }
 
-
-//struct Response<T: Decodable> {
-//  public typealias Model = T
-//
-//  let request: Request<Model>
-//  let data: Data?
-//  let urlResponse: URLResponse?
-//  let error: CatApiError?
-//}
